@@ -20,7 +20,7 @@
        
     <info
         organisation="introsde"
-        module="storage-data-service"
+        module="process-centric-service"
         status="integration">
 	</info>
 	
