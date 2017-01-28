@@ -1,4 +1,7 @@
-package introsde.process.rest.resources;
+package introsde.process.rest.ws.resources;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -9,27 +12,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
-import org.glassfish.jersey.client.ClientConfig;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import introsde.process.rest.model.Goal;
-import introsde.process.rest.model.Measurement;
-import introsde.process.rest.model.Person;
-import introsde.process.rest.model.MeasurementHistory;
+import introsde.process.rest.ws.*;
 
 
 /***
@@ -41,27 +30,17 @@ import introsde.process.rest.model.MeasurementHistory;
 
 //@Stateless
 //@LocalBean
-@Path("/person")
+@Path("/ws/person")
 public class PersonResource {
 	@Context UriInfo uriInfo;	// allows to insert contextual objects (uriInfo) into the class
 	@Context Request request;	// allows to insert contextual objects (request) into the class
 	
-	DocumentBuilder docBuilder;
-	WebTarget webTarget;
-	ObjectMapper mapper = new ObjectMapper();
-	
-	// Definition of some useful constants
-	final String baseUrl = "http://storage-data-service-ar.herokuapp.com/rest/person";
+	static People_Service service = null;
+	static People people = null;
 	
 	public PersonResource() {
-		try {
-			docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			e.printStackTrace();
-		}
-		webTarget = ClientBuilder.newClient(
-				new ClientConfig()).target(UriBuilder.fromUri(baseUrl).build()
-		);
+		service = new People_Service();
+		people = service.getPeopleImplementationPort();
 	}
 	
 	/***
@@ -72,7 +51,7 @@ public class PersonResource {
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	public Response getPeopleList() {
 		try {
-			return getResponse(webTarget, MediaType.APPLICATION_JSON);
+			return Response.ok(people.readPersonList()).build();
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -87,10 +66,14 @@ public class PersonResource {
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	@Path("/{id}")
 	public Response getPerson(@PathParam("id") Long id) {
-		WebTarget pathTarget = webTarget.path(id.toString());
-		
 		try {
-			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
+			Person result = people.readPerson(id);
+			
+			if (result!=null) {
+				return Response.ok(result).build();
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -107,12 +90,18 @@ public class PersonResource {
 	@Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	@Path("/{id}")
-	public Response updatePerson(Person p, @PathParam("id") Long id) {
-		WebTarget pathTarget = webTarget.path(id.toString());
-		
+	public Response updatePerson(Person p, @PathParam("id") int id) {
 		try {
-			return putResponse(pathTarget, p, MediaType.APPLICATION_JSON);
+			p.setId(id);
+			
+			if (people.readPerson(Long.valueOf(id))!=null) {
+				Person result = people.updatePerson(p);
+				return Response.ok(result).build();
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
 		} catch(Exception e) {
+			System.out.println(e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
 	}
@@ -128,7 +117,13 @@ public class PersonResource {
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	public Response createPerson(Person p) {
 		try {
-			return postResponse(webTarget, p, MediaType.APPLICATION_JSON);
+			Person result = people.createPerson(p);
+			
+			if (result!=null) {
+				return Response.status(Response.Status.CREATED).entity(result).build();
+			} else {
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -143,10 +138,13 @@ public class PersonResource {
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	@Path("/{id}")
 	public Response deletePerson(@PathParam("id") Long id) {
-		WebTarget pathTarget = webTarget.path(id.toString());
-		
 		try {
-			return pathTarget.request().delete();
+			if (people.readPerson(id)!=null) {
+				people.deletePerson(id);
+				return Response.status(Response.Status.NO_CONTENT).build();
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -166,10 +164,8 @@ public class PersonResource {
 			@PathParam("id") Long id,
 			@PathParam("measure_type") String measureType
 	) {
-		WebTarget pathTarget = webTarget.path(id.toString()).path(measureType);
-		
 		try {
-			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
+			return Response.ok(people.readPersonHistory(id, measureType)).build();
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -191,10 +187,14 @@ public class PersonResource {
 			@PathParam("measure_type") String measureType,
 			@PathParam("mid") Long mid
 	) {
-		WebTarget pathTarget = webTarget.path(id.toString()).path(measureType).path(mid.toString());
-		
 		try {
-			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
+			MeasurementHistory result = people.readPersonMeasure(id, measureType, mid);
+			
+			if (result!=null) {
+				return Response.ok(result).build();
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -217,10 +217,16 @@ public class PersonResource {
 			@PathParam("id") Long id,
 			@PathParam("measure_type") String name
 	) {
-		WebTarget pathTarget = webTarget.path(id.toString()).path(name);
-		
 		try {
-			return postResponse(pathTarget, m, MediaType.APPLICATION_JSON);
+			m.setMeasure(name);
+			
+			Measurement result = people.savePersonMeasure(id, m);
+			
+			if (result!=null) {
+				return Response.status(Response.Status.CREATED).entity(result).build();
+			} else {
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -242,13 +248,20 @@ public class PersonResource {
 	public Response updatePersonMeasure(
 			MeasurementHistory m,
 			@PathParam("id") Long id,
-			@PathParam("mid") Long mid,
+			@PathParam("mid") int mid,
 			@PathParam("measure_type") String name
 	) {
-		WebTarget pathTarget = webTarget.path(id.toString()).path(name).path(mid.toString());
-		
 		try {
-			return putResponse(pathTarget, m, MediaType.APPLICATION_JSON);
+			m.setMeasure(name);
+			m.setMid(mid);
+			
+			if (people.readPersonMeasure(id, name, Long.valueOf(mid))!=null) {
+				Long result = people.updatePersonMeasure(id, m);
+				String jsonResult = "{\"mid\": " + result + ", \"measure\": \"" + m.getMeasure() + "\"}";
+				return Response.ok(jsonResult).build();
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -266,10 +279,18 @@ public class PersonResource {
 	public Response getPersonGoalById(
 			@PathParam("id") Long id,
 			@PathParam("gId") Long gId) {
-		WebTarget pathTarget = webTarget.path(id.toString()).path("goal").path(gId.toString());
-		
 		try {
-			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
+			Goal result = people.readPersonGoalById(id, gId);
+			
+			if (people.readGoal(gId)!=null) {
+				if (result!=null) {
+					return Response.ok(result).build();
+				} else {
+					return Response.status(Response.Status.FORBIDDEN).build();
+				}
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -287,10 +308,14 @@ public class PersonResource {
 	public Response createPersonGoal(
 			Goal g,
 			@PathParam("id") Long id) {
-		WebTarget pathTarget = webTarget.path(id.toString()).path("goal");
-		
 		try {
-			return postResponse(pathTarget, g, MediaType.APPLICATION_JSON);
+			Goal result = people.createGoal(id, g);
+			
+			if (result!=null) {
+				return Response.status(Response.Status.CREATED).entity(result).build();
+			} else {
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -310,10 +335,19 @@ public class PersonResource {
 			Goal g,
 			@PathParam("id") Long id,
 			@PathParam("gId") Long gId) {
-		WebTarget pathTarget = webTarget.path(id.toString()).path("goal").path(gId.toString());
-		
 		try {
-			return putResponse(pathTarget, g, MediaType.APPLICATION_JSON);
+			g.setId(gId.intValue());
+			
+			if (people.readGoal(gId)!=null) {
+				if (people.readPersonGoalById(id, gId)==null) {
+					Goal result = people.updateGoal(id, g);
+					return Response.ok(result).build();
+				} else {
+					return Response.status(Response.Status.FORBIDDEN).build();
+				}
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -331,10 +365,13 @@ public class PersonResource {
 	public Response deletePersonGoal(
 			@PathParam("id") Long id,
 			@PathParam("gId") Long gId) {
-		WebTarget pathTarget = webTarget.path(id.toString()).path("goal").path(gId.toString());
-		
 		try {
-			return pathTarget.request().delete();
+			if (people.readGoal(gId)!=null) {
+				people.deleteGoal(gId);
+				return Response.status(Response.Status.NO_CONTENT).build();
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -349,10 +386,14 @@ public class PersonResource {
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	@Path("/{id}/goal")
 	public Response getPersonGoals(@PathParam("id") Long id) {
-		WebTarget pathTarget = webTarget.path(id.toString()).path("goal");
-		
 		try {
-			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
+			List<Goal> result = people.readPersonGoalList(id);
+			
+			if (result!=null) {
+				return Response.ok(result).build();
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -371,25 +412,38 @@ public class PersonResource {
 			@PathParam("id") Long id,
 			@QueryParam("title") String title,
 			@QueryParam("status") String status) {
-		WebTarget pathTarget = webTarget.path(id.toString()).path("goal").path("find");
-		
 		try {
-			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
+			List<Goal> result = new ArrayList<Goal>();
+			
+			if ((title!=null)&&(status!=null)) {
+				result.add(people.readPersonGoalByNameAndStatus(id, title, status));
+				if (result.get(0)!=null) {
+					return Response.ok(result.get(0)).build();
+				} else {
+					return Response.status(Response.Status.NOT_FOUND).build();
+				}
+			} else {
+				if ((title!=null)&&(status==null)) {
+					result.add(people.readPersonGoalByName(id, title));
+					if (result.get(0)!=null) {
+						return Response.ok(result.get(0)).build();
+					} else {
+						return Response.status(Response.Status.NOT_FOUND).build();
+					}
+				} else if ((title==null)&&(status!=null)) {
+					result = people.readPersonGoalByStatus(id, status);
+					if (result!=null) {
+						return Response.ok(result).build();
+					} else {
+						return Response.status(Response.Status.NOT_FOUND).build();
+					}
+				} else {
+					result = people.readPersonGoalList(id);
+					return Response.ok(result).build();
+				}
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
-	}
-	
-	
-	private Response getResponse(WebTarget webTarget, String mediaType) {
-		return webTarget.request().accept(mediaType).get();
-	}
-	
-	private Response putResponse(WebTarget webTarget, Object payload, String mediaType) {
-		return webTarget.request().accept(mediaType).put(Entity.entity(payload, mediaType));
-	}
-	
-	private Response postResponse(WebTarget webTarget, Object payload, String mediaType) {
-		return webTarget.request().accept(mediaType).post(Entity.entity(payload, mediaType));
 	}
 }

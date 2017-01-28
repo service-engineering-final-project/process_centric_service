@@ -36,6 +36,8 @@ public class Person implements Serializable {
 	@XmlElement private List<Measurement> health_profile;
 	@XmlElement private List<MeasurementHistory> mHistory;
 	@XmlElement private List<Goal> goals;
+	
+	
 	/**
 	 * @return the id
 	 */

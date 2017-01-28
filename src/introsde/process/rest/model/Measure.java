@@ -25,7 +25,7 @@ public class Measure implements Serializable {
 	 ********************************************************************************/
 	
 	@XmlElement private int id;
-	@XmlElement private String measureName;
+	@XmlElement private String name;
 	/**
 	 * @return the id
 	 */
@@ -33,10 +33,10 @@ public class Measure implements Serializable {
 		return id;
 	}
 	/**
-	 * @return the measureName
+	 * @return the name
 	 */
-	public String getMeasureName() {
-		return measureName;
+	public String getName() {
+		return name;
 	}
 	/**
 	 * @param id the id to set
@@ -45,9 +45,9 @@ public class Measure implements Serializable {
 		this.id = id;
 	}
 	/**
-	 * @param measureName the measureName to set
+	 * @param name the name to set
 	 */
-	public void setMeasureName(String measureName) {
-		this.measureName = measureName;
+	public void setName(String name) {
+		this.name = name;
 	}
 }

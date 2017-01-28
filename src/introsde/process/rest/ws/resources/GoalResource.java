@@ -1,24 +1,16 @@
-package introsde.process.rest.resources;
+package introsde.process.rest.ws.resources;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
-import org.glassfish.jersey.client.ClientConfig;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import introsde.process.rest.ws.*;
 
 
 /***
@@ -30,27 +22,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 //@Stateless
 //@LocalBean
-@Path("/goal")
+@Path("/ws/goal")
 public class GoalResource {
 	@Context UriInfo uriInfo;	// allows to insert contextual objects (uriInfo) into the class
 	@Context Request request;	// allows to insert contextual objects (request) into the class
 	
-	DocumentBuilder docBuilder;
-	WebTarget webTarget;
-	ObjectMapper mapper = new ObjectMapper();
-	
-	// Definition of some useful constants
-	final String baseUrl = "http://storage-data-service-ar.herokuapp.com/rest/goal";
+	static People_Service service = null;
+	static People people = null;
 	
 	public GoalResource() {
-		try {
-			docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			e.printStackTrace();
-		}
-		webTarget = ClientBuilder.newClient(
-				new ClientConfig()).target(UriBuilder.fromUri(baseUrl).build()
-		);
+		service = new People_Service();
+		people = service.getPeopleImplementationPort();
 	}
 	
 	/***
@@ -61,7 +43,7 @@ public class GoalResource {
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	public Response getGoalsList() {
 		try {
-			return getResponse(webTarget, MediaType.APPLICATION_JSON);
+			return Response.ok(people.readGoalList()).build();
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
@@ -76,17 +58,16 @@ public class GoalResource {
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	@Path("/{id}")
 	public Response getGoal(@PathParam("id") Long id) {
-		WebTarget pathTarget = webTarget.path(id.toString());
-		
 		try {
-			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
+			Goal result = people.readGoal(id);
+			
+			if (result!=null) {
+				return Response.ok(result).build();
+			} else {
+				return Response.status(Response.Status.NOT_FOUND).build();
+			}
 		} catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
-	}
-	
-	
-	private Response getResponse(WebTarget webTarget, String mediaType) {
-		return webTarget.request().accept(mediaType).get();
 	}
 }

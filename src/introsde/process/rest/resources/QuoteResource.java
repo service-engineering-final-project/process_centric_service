@@ -47,7 +47,7 @@ public class QuoteResource {
 	ObjectMapper mapper = new ObjectMapper();
 	
 	// Definition of some useful constants
-	final String baseUrl = "http://storage-data-service.herokuapp.com/rest/quote";
+	final String baseUrl = "http://storage-data-service-ar.herokuapp.com/rest/quote";
 	
 	public QuoteResource() {
 		try {

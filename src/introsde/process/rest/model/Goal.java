@@ -19,7 +19,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlRootElement			// make it the root element
 
 // The content order in the generated schema type
-@XmlType(propOrder={"id","title","initValue","finalValue","time","deadline","achieved"})
+@XmlType(propOrder={"id","title","init_value","final_value","created","deadline","achieved"})
 
 public class Goal implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -30,12 +30,13 @@ public class Goal implements Serializable {
 	
 	@XmlElement private int id;
 	@XmlElement private String title;
-	@XmlElement private String initValue;
-	@XmlElement private String finalValue;
+	@XmlElement private String init_value;
+	@XmlElement private String final_value;
+	@XmlElement private String created;
 	@XmlElement private String deadline;
-	@XmlElement private String time;
 	@XmlElement private String achieved;
 	@XmlElement private Person person;
+	
 	
 	/**
 	 * @return the id
@@ -50,28 +51,28 @@ public class Goal implements Serializable {
 		return title;
 	}
 	/**
-	 * @return the initValue
+	 * @return the init_value
 	 */
-	public String getInitValue() {
-		return initValue;
+	public String getInit_value() {
+		return init_value;
 	}
 	/**
-	 * @return the finalValue
+	 * @return the final_value
 	 */
-	public String getFinalValue() {
-		return finalValue;
+	public String getFinal_value() {
+		return final_value;
+	}
+	/**
+	 * @return the created
+	 */
+	public String getCreated() {
+		return created;
 	}
 	/**
 	 * @return the deadline
 	 */
 	public String getDeadline() {
 		return deadline;
-	}
-	/**
-	 * @return the time
-	 */
-	public String getTime() {
-		return time;
 	}
 	/**
 	 * @return the achieved
@@ -98,28 +99,28 @@ public class Goal implements Serializable {
 		this.title = title;
 	}
 	/**
-	 * @param initValue the initValue to set
+	 * @param init_value the init_value to set
 	 */
-	public void setInitValue(String initValue) {
-		this.initValue = initValue;
+	public void setInit_value(String init_value) {
+		this.init_value = init_value;
 	}
 	/**
-	 * @param finalValue the finalValue to set
+	 * @param final_value the final_value to set
 	 */
-	public void setFinalValue(String finalValue) {
-		this.finalValue = finalValue;
+	public void setFinal_value(String final_value) {
+		this.final_value = final_value;
+	}
+	/**
+	 * @param created the created to set
+	 */
+	public void setCreated(String created) {
+		this.created = created;
 	}
 	/**
 	 * @param deadline the deadline to set
 	 */
 	public void setDeadline(String deadline) {
 		this.deadline = deadline;
-	}
-	/**
-	 * @param time the time to set
-	 */
-	public void setTime(String time) {
-		this.time = time;
 	}
 	/**
 	 * @param achieved the achieved to set

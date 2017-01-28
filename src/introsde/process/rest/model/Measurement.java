@@ -24,43 +24,43 @@ public class Measurement implements Serializable {
 	 * DEFINITION OF ALL THE PRIVATE ATTRIBUTES OF THE CLASS AND THEIR MAPPING		*
 	 ********************************************************************************/
 	
-	@XmlElement private int id;
-	@XmlElement private String measureName;
-	@XmlElement private String measureValue;
-	@XmlElement private String measureValueType;
-	@XmlElement private String time;
+	@XmlElement private int mid;
+	@XmlElement private String measure;
+	@XmlElement private String value;
+	@XmlElement private String valueType;
+	@XmlElement private String created;
 	@XmlElement private Person person;
 	
 	
 	/**
-	 * @return the id
+	 * @return the mid
 	 */
-	public int getId() {
-		return id;
+	public int getMid() {
+		return mid;
 	}
 	/**
-	 * @return the measureName
+	 * @return the measure
 	 */
-	public String getMeasureName() {
-		return measureName;
+	public String getMeasure() {
+		return measure;
 	}
 	/**
-	 * @return the measureValue
+	 * @return the value
 	 */
-	public String getMeasureValue() {
-		return measureValue;
+	public String getValue() {
+		return value;
 	}
 	/**
-	 * @return the measureValueType
+	 * @return the valueType
 	 */
-	public String getMeasureValueType() {
-		return measureValueType;
+	public String getValueType() {
+		return valueType;
 	}
 	/**
-	 * @return the time
+	 * @return the created
 	 */
-	public String getTime() {
-		return time;
+	public String getCreated() {
+		return created;
 	}
 	/**
 	 * @return the person
@@ -69,34 +69,34 @@ public class Measurement implements Serializable {
 		return person;
 	}
 	/**
-	 * @param id the id to set
+	 * @param mid the mid to set
 	 */
-	public void setId(int id) {
-		this.id = id;
+	public void setMid(int mid) {
+		this.mid = mid;
 	}
 	/**
-	 * @param measureName the measureName to set
+	 * @param name the measure to set
 	 */
-	public void setMeasureName(String measureName) {
-		this.measureName = measureName;
+	public void setMeasure(String measure) {
+		this.measure = measure;
 	}
 	/**
-	 * @param measureValue the measureValue to set
+	 * @param value the value to set
 	 */
-	public void setMeasureValue(String measureValue) {
-		this.measureValue = measureValue;
+	public void setValue(String value) {
+		this.value = value;
 	}
 	/**
-	 * @param measureValueType the measureValueType to set
+	 * @param valueType the valueType to set
 	 */
-	public void setMeasureValueType(String measureValueType) {
-		this.measureValueType = measureValueType;
+	public void setValueType(String valueType) {
+		this.valueType = valueType;
 	}
 	/**
-	 * @param time the time to set
+	 * @param created the created to set
 	 */
-	public void setTime(String time) {
-		this.time = time;
+	public void setCreated(String created) {
+		this.created = created;
 	}
 	/**
 	 * @param person the person to set
