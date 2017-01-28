@@ -50,7 +50,7 @@ public class RecipeResource {
 	ObjectMapper mapper = new ObjectMapper();
 	
 	// Definition of some useful constants
-	final String baseUrl = "http://storage-data-service.herokuapp.com/rest/recipe";
+	final String baseUrl = "http://storage-data-service-ar.herokuapp.com/rest/recipe";
 	
 	public RecipeResource() {
 		try {

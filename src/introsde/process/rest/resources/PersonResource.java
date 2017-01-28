@@ -373,6 +373,9 @@ public class PersonResource {
 			@QueryParam("status") String status) {
 		WebTarget pathTarget = webTarget.path(id.toString()).path("goal").path("find");
 		
+		if (title != null) pathTarget = pathTarget.queryParam("title", title);
+		if (status != null) pathTarget = pathTarget.queryParam("status", status);
+		
 		try {
 			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
 		} catch(Exception e) {
