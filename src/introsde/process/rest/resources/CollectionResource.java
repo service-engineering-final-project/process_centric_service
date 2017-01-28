@@ -4,11 +4,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -28,6 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import introsde.process.rest.model.Goal;
 import introsde.process.rest.model.Measurement;
 import introsde.process.rest.model.Person;
+import introsde.storage.soap.ws.MeasurementHistory;
 
 
 /***
@@ -39,7 +47,7 @@ import introsde.process.rest.model.Person;
 
 //@Stateless
 //@LocalBean
-@Path("/ws/person")
+@Path("/person")
 public class CollectionResource {
 	@Context UriInfo uriInfo;	// allows to insert contextual objects (uriInfo) into the class
 	@Context Request request;	// allows to insert contextual objects (request) into the class
@@ -68,71 +76,174 @@ public class CollectionResource {
 	 */
 	@GET
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-	public List<Person> getPeopleList() {
-		Person person = null;
-		Measurement m = null;
-		Goal goal = null;
-		List<Person> peopleList = null;
-		List<Measurement> mList = null;
-		List<Goal> goalsList = null;
-		
-		// Send the request and get the relative response
-		Response response = webTarget.request().accept(MediaType.APPLICATION_JSON).get(Response.class);
-		int statusCode = response.getStatus();
-		
-		// Check the HTTP status code
-		if (statusCode==200) {
-			try {
-				JsonNode root = mapper.readTree(response.readEntity(String.class));
-				peopleList = new ArrayList<Person>();
-				mList = new ArrayList<Measurement>();
-				goalsList = new ArrayList<Goal>();
-				
-				for (int i=0; i<root.size(); i++) {
-					// Set the attributes of the quote
-					person = new Person();
-					person.setId(root.get(i).path("id").asInt());
-					person.setFirstname(root.get(i).path("firstname").asText());
-					person.setLastname(root.get(i).path("lastname").asText());
-					person.setBirthdate(root.get(i).path("birthdate").asText());
-					
-					JsonNode hpRoot = root.path("health_profile").path("measure_type");
-					for (int j=0; j<hpRoot.size(); j++) {
-						m = new Measurement();
-						m.setId(hpRoot.get(j).path("mid").asInt());
-						m.setMeasureName(hpRoot.get(j).path("measure").asText());
-						m.setMeasureValue(hpRoot.get(j).path("value").asText());
-						m.setMeasureValueType(hpRoot.get(j).path("value_type").asText());
-						m.setTime(hpRoot.get(j).path("created").asText());
-						mList.add(m);
-					}
-					
-					JsonNode gRoot = root.path("goals").path("goal");
-					for (int k=0; k<gRoot.size(); k++) {
-						goal = new Goal();
-						goal.setId(gRoot.get(k).path("id").asInt());
-						goal.setTitle(gRoot.get(k).path("title").asText());
-						goal.setInitValue(gRoot.get(k).path("init_value").asText());
-						goal.setFinalValue(gRoot.get(k).path("final_value").asText());
-						goal.setTime(gRoot.get(k).path("created").asText());
-						goal.setDeadline(gRoot.get(k).path("deadline").asText());
-						goal.setAchieved(gRoot.get(k).path("achieved").asText());
-						goal.setPerson(person);
-						goalsList.add(goal);
-					}
-					
-					person.setMeasurement(mList);
-					person.setGoals(goalsList);
-					
-					peopleList.add(person);
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		} else {
-			throw new WebApplicationException(statusCode);
+	public Response getPeopleList() {
+		try {
+			return getResponse(webTarget, MediaType.APPLICATION_JSON);
+		} catch(Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
 		}
+	}
+	
+	/***
+	 * A method that gives all the information of a person identified by {id}.
+	 * @param id: the identifier
+	 * @return the person identified by {id}
+	 */
+	@GET
+	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@Path("/{id}")
+	public Response getPerson(@PathParam("id") Long id) {
+		WebTarget pathTarget = webTarget.path(id.toString());
 		
-		return peopleList;
+		try {
+			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
+		} catch(Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+	
+	/***
+	 * A method that updates the information of a person identified by {id}
+	 * (i.e. only the person's information, not the measures of the health profile).
+	 * @param p: the person to update
+	 * @param id: the identifier of the person to update
+	 * @return the person updated
+	 */
+	@PUT
+	@Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@Path("/{id}")
+	public Response updatePerson(Person p, @PathParam("id") Long id) {
+		WebTarget pathTarget = webTarget.path(id.toString());
+		
+		try {
+			return putResponse(pathTarget, p, MediaType.APPLICATION_JSON);
+		} catch(Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+	
+	/***
+	 * A method that creates a new person and returns it with its assigned id
+	 * (i.e. if a health profile is included, also its measurements will be created).
+	 * @param p: the person to create
+	 * @return the person created
+	 */
+	@POST
+	@Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	public Response createPerson(Person p) {
+		try {
+			return postResponse(webTarget, p, MediaType.APPLICATION_JSON);
+		} catch(Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+	
+	/***
+	 * A method that deletes the person identified by {id} from the system.
+	 * @param id: the identifier of the person to delete
+	 */
+	@DELETE
+	@Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@Path("/{id}")
+	public Response deletePerson(@PathParam("id") Long id) {
+		WebTarget pathTarget = webTarget.path(id.toString());
+		
+		try {
+			return pathTarget.request().delete();
+		} catch(Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+	
+	/***
+	 * A method that returns the list of values (the history) of {measureType}
+	 * (e.g. weight) for a person identified by {id}.
+	 * @param id: the identifier of the person
+	 * @param measureType: the measure of interest
+	 * @return the list of all the measurements of a particular measure relative to a person
+	 */
+	@GET
+	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@Path("/{id}/{measure_type}")
+	public Response readPersonHistory(
+			@PathParam("id") Long id,
+			@PathParam("measure_type") String measureType
+	) {
+		WebTarget pathTarget = webTarget.path(id.toString()).path(measureType);
+		
+		try {
+			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
+		} catch(Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+	
+	/***
+	 * A method that returns the value of {measureType} (e.g. weight)
+	 * identified by {mid} for a person identified by {id}.
+	 * @param id: the identifier of the person
+	 * @param measureType: the measure of interest
+	 * @param mid: the measure identifier
+	 * @return the value of the measure with a particular identifier relative to a person
+	 */
+	@GET
+	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@Path("/{id}/{measure_type}/{mid}")
+	public Response readPersonMeasure(
+			@PathParam("id") Long id,
+			@PathParam("measure_type") String measureType,
+			@PathParam("mid") Long mid
+	) {
+		WebTarget pathTarget = webTarget.path(id.toString()).path(measureType).path(mid.toString());
+		
+		try {
+			return getResponse(pathTarget, MediaType.APPLICATION_JSON);
+		} catch(Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+	
+	/***
+	 * A method that saves a new measure object {m} (e.g. weight)
+	 * for a person identified by {id} and archives the old value in the history.
+	 * @param m: the measurement of interest
+	 * @param id: the identifier of the person
+	 * @param name: the name of the measure of interest
+	 * @return the saved measurement
+	 */
+	@POST
+	@Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@Path("/{id}/{measure_type}")
+	public Response savePersonMeasure(
+			Measurement m,
+			@PathParam("id") Long id,
+			@PathParam("measure_type") String name
+	) {
+		WebTarget pathTarget = webTarget.path(id.toString()).path(name));
+		
+		try {
+			return postResponse(pathTarget, m, MediaType.APPLICATION_JSON);
+		} catch(Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+	
+	
+	
+	
+	private Response getResponse(WebTarget webTarget, String mediaType) {
+		return webTarget.request().accept(mediaType).get();
+	}
+	
+	private Response putResponse(WebTarget webTarget, Object payload, String mediaType) {
+		return webTarget.request().accept(mediaType).put(Entity.entity(payload, mediaType));
+	}
+	
+	private Response postResponse(WebTarget webTarget, Object payload, String mediaType) {
+		return webTarget.request().accept(mediaType).post(Entity.entity(payload, mediaType));
 	}
 }

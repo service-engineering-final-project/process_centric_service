@@ -30,7 +30,7 @@ import introsde.process.rest.ws.*;
 
 //@Stateless
 //@LocalBean
-@Path("/person")
+@Path("/ws/person")
 public class PersonResource {
 	@Context UriInfo uriInfo;	// allows to insert contextual objects (uriInfo) into the class
 	@Context Request request;	// allows to insert contextual objects (request) into the class

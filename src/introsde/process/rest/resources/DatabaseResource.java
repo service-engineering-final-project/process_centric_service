@@ -22,7 +22,7 @@ import introsde.process.rest.ws.People_Service;
 
 //@Stateless
 //@LocalBean
-@Path("/init")
+@Path("/ws/init")
 public class DatabaseResource {
 	@Context UriInfo uriInfo;	// allows to insert contextual objects (uriInfo) into the class
 	@Context Request request;	// allows to insert contextual objects (request) into the class

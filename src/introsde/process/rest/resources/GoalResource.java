@@ -22,7 +22,7 @@ import introsde.process.rest.ws.*;
 
 //@Stateless
 //@LocalBean
-@Path("/goal")
+@Path("/ws/goal")
 public class GoalResource {
 	@Context UriInfo uriInfo;	// allows to insert contextual objects (uriInfo) into the class
 	@Context Request request;	// allows to insert contextual objects (request) into the class
